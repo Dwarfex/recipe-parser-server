@@ -6,7 +6,13 @@ from recipe_scrapers import SCRAPERS
 from flask import request
 from flask import jsonify
 from waitress import serve
+import logging
+
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @app.route("/", methods=['GET'])
@@ -35,6 +41,7 @@ def parse():
 @app.route("/pull", methods=['GET'])
 def pull():
     url = request.args.get('url')
+    logger.info(f"Pulling recipe from URL: {url}")
     baseurl = request.base_url.removesuffix('/pull')
 
     # retrieve the recipe webpage HTML
