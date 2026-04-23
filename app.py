@@ -79,8 +79,8 @@ def pull():
         )
         return response
     except Exception as exception:
-        logger.error(f"Error pulling recipe from {url}: {str(exception)}")
-        return {'error': f'Failed to pull recipe: {str(exception)}'}, 500
+        logger.exception(f"Error pulling recipe from {url}")
+        return {'error': 'Failed to pull recipe due to an internal error.'}, 500
 
 @app.route("/example")
 def example():
