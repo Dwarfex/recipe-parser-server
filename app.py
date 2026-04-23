@@ -42,13 +42,12 @@ def parse():
 def pull():
     url = request.args.get('url')
     logger.info(f"Pulling recipe from URL: {url}")
-    baseurl = request.base_url.removesuffix('/pull')
 
     # retrieve the recipe webpage HTML
     html = urlopen(url).read().decode("utf-8")
     myobj = {'url': url, 'contents': html}
 
-    x = requests.post(baseurl + '/parse', json = myobj)
+    x = requests.post('http://localhost:5127/parse', json = myobj)
     data = x.text
     response = app.response_class(
         response=data,
