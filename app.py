@@ -7,6 +7,7 @@ from flask import request
 from flask import jsonify
 from waitress import serve
 import logging
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 
@@ -38,23 +39,48 @@ def parse():
         return {'error': exception.message}
 
 
+def is_valid_uri(uri):
+    """Check if the provided string is a valid URI."""
+    try:
+        result = urlparse(uri)
+        # Check that the URI has a scheme (http, https, etc.) and a netloc (domain)
+        return all([result.scheme, result.netloc])
+    except Exception:
+        return False
+
+
 @app.route("/pull", methods=['GET'])
 def pull():
     url = request.args.get('url')
+    
+    # Validate that URL is provided
+    if not url:
+        logger.warning("Pull request received without a URL")
+        return {'error': 'Missing required parameter: url'}, 400
+    
+    # Validate that URL is a valid URI
+    if not is_valid_uri(url):
+        logger.warning(f"Pull request received with invalid URL: {url}")
+        return {'error': 'Invalid URL format'}, 400
+    
     logger.info(f"Pulling recipe from URL: {url}")
+    
+    try:
+        # retrieve the recipe webpage HTML
+        html = urlopen(url).read().decode("utf-8")
+        myobj = {'url': url, 'contents': html}
 
-    # retrieve the recipe webpage HTML
-    html = urlopen(url).read().decode("utf-8")
-    myobj = {'url': url, 'contents': html}
-
-    x = requests.post('http://localhost:5127/parse', json = myobj)
-    data = x.text
-    response = app.response_class(
-        response=data,
-        status=200,
-        mimetype='application/json'
-    )
-    return response
+        x = requests.post('http://localhost:5127/parse', json = myobj)
+        data = x.text
+        response = app.response_class(
+            response=data,
+            status=200,
+            mimetype='application/json'
+        )
+        return response
+    except Exception as exception:
+        logger.error(f"Error pulling recipe from {url}: {str(exception)}")
+        return {'error': f'Failed to pull recipe: {str(exception)}'}, 500
 
 @app.route("/example")
 def example():
